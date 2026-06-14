@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NEON SNAKE - Retro Arcade</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&family=Inter:wght@400;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --bg:#081425;
+    --surface-low:#111c2d;
+    --surface-lowest:#040e1f;
+    --surface-container:#152031;
+    --surface-container-high:#1f2a3c;
+    --surface-container-highest:#2a3548;
+    --outline:#85967c;
+    --outline-variant:#3c4b35;
+    --on-surface:#d8e3fb;
+    --on-surface-variant:#baccb0;
+    --primary:#2ae500;
+    --primary-bright:#79ff5b;
+    --primary-deep:#022100;
+    --accent:#ffb4ab;
+    --gold:#ffd166;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background-color:var(--bg);
+    color:var(--on-surface);
+    font-family:'Inter',sans-serif;
+    overflow:hidden;
+    min-height:100vh;
+  }
+  .font-display{font-family:'Space Grotesk',sans-serif;}
+  .material-symbols-outlined{
+    font-family:'Material Symbols Outlined';
+    font-weight:normal;
+    font-style:normal;
+    font-size:24px;
+    line-height:1;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* Layout */
+  header{
+    background:var(--bg);
+    border-bottom:1px solid var(--outline-variant);
+    position:sticky;
+    top:0;
+    z-index:50;
+  }
+  .header-inner{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:0 24px;
+    height:64px;
+    max-width:800px;
+    margin:0 auto;
+  }
+  .logo{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:24px;
+    font-weight:700;
+    color:var(--primary-bright);
+    text-shadow:0 0 8px rgba(42,229,0,0.6);
+    letter-spacing:0.02em;
+  }
+  .header-icons{display:flex;align-items:center;gap:24px;}
+  .header-icons .material-symbols-outlined{
+    color:var(--primary-bright);
+    cursor:pointer;
+    transition:color .15s;
+  }
+  .header-icons .material-symbols-outlined:hover{color:var(--primary);}
+  .header-icons .material-symbols-outlined.muted{color:var(--on-surface-variant);}
+
+  .layout{
+    display:flex;
+    height:calc(100vh - 64px);
+    overflow:hidden;
+  }
+
+  /* Sidebar */
+  nav.sidebar{
+    background:var(--surface-low);
+    border-right:1px solid var(--outline-variant);
+    height:100%;
+    width:256px;
+    display:flex;
+    flex-direction:column;
+    padding:12px;
+    flex-shrink:0;
+    overflow-y:auto;
+  }
+  .profile{margin-bottom:32px;padding:8px;}
+  .profile-inner{display:flex;align-items:center;gap:12px;}
+  .avatar{
+    width:40px;height:40px;border-radius:9999px;
+    border:1px solid var(--primary-bright);
+    display:flex;align-items:center;justify-content:center;
+    background:var(--surface-container-highest);
+    color:var(--primary-bright);
+    font-family:'Space Grotesk',sans-serif;font-weight:700;
+  }
+  .profile-name{
+    font-family:'Inter',sans-serif;font-size:12px;letter-spacing:0.1em;
+    font-weight:700;color:var(--primary-bright);text-transform:uppercase;
+  }
+  .profile-rank{font-size:10px;color:var(--on-surface-variant);opacity:0.7;margin-top:2px;}
+
+  .nav-list{display:flex;flex-direction:column;gap:4px;}
+  .nav-item{
+    display:flex;align-items:center;gap:12px;padding:12px;
+    border-radius:8px;cursor:pointer;
+    color:var(--on-surface-variant);
+    font-size:12px;letter-spacing:0.1em;font-weight:700;text-transform:uppercase;
+    transition:all .15s;
+    background:transparent;
+    border:none;
+    width:100%;
+    text-align:left;
+    font-family:'Inter',sans-serif;
+  }
+  .nav-item:hover{background:var(--surface-container-highest);}
+  .nav-item:active{transform:scale(0.98);}
+  .nav-item.active{
+    background:var(--primary);
+    color:var(--primary-deep);
+  }
+  .nav-item .mode-badge{
+    margin-left:auto;
+    font-size:9px;letter-spacing:0.05em;
+    background:rgba(8,20,37,0.35);
+    padding:2px 6px;border-radius:4px;
+  }
+
+  .sidebar-bottom{
+    margin-top:auto;padding-top:24px;border-top:1px solid var(--outline-variant);
+    display:flex;flex-direction:column;gap:4px;
+  }
+
+  /* Leaderboard panel in sidebar */
+  .leaderboard-panel{
+    border-top:1px solid var(--outline-variant);
+    margin-top:16px;padding-top:16px;
+    display:none;
+  }
+  .leaderboard-panel.visible{display:block;}
+  .leaderboard-title{
+    font-size:12px;letter-spacing:0.1em;font-weight:700;text-transform:uppercase;
+    color:var(--primary-bright);margin-bottom:12px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .leaderboard-title .material-symbols-outlined{font-size:16px;}
+  .leaderboard-tabs{
+    display:flex;gap:4px;margin-bottom:10px;
+  }
+  .lb-tab{
+    flex:1;padding:6px 0;text-align:center;border-radius:6px;
+    font-size:10px;letter-spacing:0.08em;font-weight:700;text-transform:uppercase;
+    background:var(--surface-container);color:var(--on-surface-variant);
+    border:1px solid var(--outline-variant);cursor:pointer;
+  }
+  .lb-tab.active{background:var(--primary);color:var(--primary-deep);border-color:var(--primary);}
+  .leaderboard-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
+  .leaderboard-list li{
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:12px;padding:6px 10px;border-radius:6px;
+    background:var(--surface-container);
+    color:var(--on-surface-variant);
+  }
+  .leaderboard-list li .rank{
+    color:var(--primary-bright);font-family:'Space Grotesk',sans-serif;font-weight:700;
+    width:20px;display:inline-block;
+  }
+  .leaderboard-list li .lb-score{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--on-surface);
+    font-variant-numeric: tabular-nums;
+  }
+  .leaderboard-empty{font-size:11px;color:var(--on-surface-variant);opacity:0.6;text-align:center;padding:8px 0;}
+
+  /* Main */
+  main{
+    flex-grow:1;display:flex;align-items:center;justify-content:center;
+    padding:24px;position:relative;background:var(--bg);
+  }
+  .bg-glow{
+    position:absolute;inset:0;opacity:0.2;pointer-events:none;
+    background:radial-gradient(circle at center, rgba(42,229,0,0.15), transparent 70%);
+  }
+
+  .board-area{
+    position:relative;z-index:10;display:flex;flex-direction:column;
+    gap:12px;align-items:stretch;
+  }
+  @media (min-width:768px){
+    .board-area{flex-direction:row;}
+  }
+
+  .board-frame{
+    position:relative;padding:8px;border-radius:8px;
+    background:var(--surface-container-highest);
+    border:1px solid var(--outline-variant);
+  }
+  #game-canvas{
+    width:min(500px, 90vw);
+    height:min(500px, 90vw);
+    background-color:var(--surface-lowest);
+    background-image:
+      linear-gradient(to right, rgba(42,229,0,0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(42,229,0,0.05) 1px, transparent 1px);
+    background-size: calc(100% / 25) calc(100% / 25);
+    position:relative;
+    border:1px solid rgba(186,204,176,0.2);
+    border-radius:4px;
+    overflow:hidden;
+  }
+
+  .segment{
+    position:absolute;
+    background:var(--primary);
+    border-radius:2px;
+    box-shadow:0 0 10px var(--primary), 0 0 5px var(--primary) inset;
+    transition:opacity .1s;
+  }
+  .segment.head{
+    background:var(--primary-bright);
+    box-shadow:0 0 14px var(--primary-bright), 0 0 6px var(--primary-bright) inset;
+  }
+  .food{
+    position:absolute;
+    background:var(--accent);
+    border-radius:9999px;
+    box-shadow:0 0 15px var(--accent), 0 0 5px var(--accent) inset;
+    animation:pulseFood 1s ease-in-out infinite;
+  }
+  .food.bonus{
+    background:var(--gold);
+    box-shadow:0 0 18px var(--gold), 0 0 6px var(--gold) inset;
+  }
+  .obstacle{
+    position:absolute;
+    background:var(--surface-container-high);
+    border:1px solid var(--accent);
+    border-radius:2px;
+    box-shadow:0 0 8px rgba(255,180,171,0.35) inset;
+  }
+  @keyframes pulseFood{
+    0%,100%{transform:scale(1);}
+    50%{transform:scale(0.82);}
+  }
+
+  /* Overlay */
+  .overlay{
+    position:absolute;inset:0;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:rgba(8,20,37,0.88);
+    backdrop-filter:blur(4px);
+    gap:14px;text-align:center;padding:24px;
+    z-index:20;
+    overflow-y:auto;
+  }
+  .overlay h2{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:32px;font-weight:600;color:var(--primary-bright);
+    text-shadow:0 0 8px rgba(42,229,0,0.6);
+    margin:0;
+  }
+  .overlay p{margin:0;color:var(--on-surface-variant);font-size:14px;max-width:320px;line-height:1.5;}
+  .overlay button.primary-btn{
+    margin-top:4px;padding:10px 28px;
+    background:var(--primary);color:var(--primary-deep);
+    border:none;border-radius:4px;
+    font-family:'Inter',sans-serif;font-size:12px;letter-spacing:0.1em;font-weight:700;text-transform:uppercase;
+    cursor:pointer;transition:all .15s;
+    box-shadow:0 0 15px rgba(42,229,0,0.4);
+  }
+  .overlay button.primary-btn:hover{background:var(--primary-bright);}
+  .overlay button.primary-btn:active{transform:scale(0.96);}
+  .hidden{display:none !important;}
+
+  /* Setup controls inside overlay */
+  .setup-group{display:flex;flex-direction:column;gap:8px;align-items:center;margin-top:4px;}
+  .setup-label{
+    font-size:11px;letter-spacing:0.1em;font-weight:700;text-transform:uppercase;
+    color:var(--on-surface-variant);
+  }
+  .option-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+  .option-btn{
+    padding:8px 16px;border-radius:6px;
+    border:1px solid var(--outline);
+    background:var(--surface-container);
+    color:var(--on-surface-variant);
+    font-family:'Inter',sans-serif;font-size:11px;letter-spacing:0.08em;font-weight:700;text-transform:uppercase;
+    cursor:pointer;transition:all .15s;
+  }
+  .option-btn:hover{border-color:var(--primary-bright);color:var(--primary-bright);}
+  .option-btn.selected{
+    background:var(--primary);color:var(--primary-deep);border-color:var(--primary);
+    box-shadow:0 0 10px rgba(42,229,0,0.3);
+  }
+
+  .toggle-row{display:flex;align-items:center;gap:10px;}
+  .toggle{
+    position:relative;width:40px;height:22px;border-radius:9999px;
+    background:var(--surface-container-high);
+    border:1px solid var(--outline);
+    cursor:pointer;transition:background .15s;
+    flex-shrink:0;
+  }
+  .toggle.on{background:var(--primary);border-color:var(--primary);}
+  .toggle-knob{
+    position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:9999px;
+    background:var(--on-surface);transition:left .15s;
+  }
+  .toggle.on .toggle-knob{left:20px;background:var(--primary-deep);}
+
+  /* Mini leaderboard inside game over overlay */
+  .mini-leaderboard{width:100%;max-width:280px;margin-top:4px;}
+  .mini-leaderboard ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;}
+  .mini-leaderboard li{
+    display:flex;justify-content:space-between;padding:6px 12px;border-radius:6px;
+    background:var(--surface-container);font-size:12px;color:var(--on-surface-variant);
+  }
+  .mini-leaderboard li.you{
+    background:var(--primary);color:var(--primary-deep);font-weight:700;
+  }
+  .mini-leaderboard li .lb-score{font-family:'Space Grotesk',sans-serif;font-weight:700;}
+
+  /* Side panels */
+  .panels{
+    display:flex;flex-direction:column;gap:12px;width:100%;
+  }
+  @media (min-width:768px){
+    .panels{width:256px;}
+  }
+  .glass-panel{
+    background:rgba(21,32,49,0.7);
+    backdrop-filter:blur(10px);
+    border:1px solid rgba(133,150,124,0.2);
+    border-radius:12px;
+    padding:20px;
+    transition:background .2s;
+  }
+  .panel-label{
+    font-size:12px;letter-spacing:0.1em;font-weight:700;text-transform:uppercase;
+    color:var(--on-surface-variant);margin-bottom:4px;
+  }
+  .score-value{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:48px;line-height:1;letter-spacing:-0.05em;font-weight:700;
+    color:var(--primary-bright);margin-bottom:24px;
+    font-variant-numeric: tabular-nums;
+  }
+  .score-value.small{
+    font-size:32px;color:var(--accent);margin-bottom:0;
+  }
+  .score-row{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;}
+  .score-row .score-col{flex:1;}
+  .score-row .score-value{margin-bottom:0;}
+
+  .timer-wrap{margin-top:16px;}
+  .timer-bar-bg{
+    width:100%;height:8px;border-radius:9999px;background:var(--surface-container-high);
+    overflow:hidden;border:1px solid var(--outline-variant);
+  }
+  .timer-bar-fill{
+    height:100%;border-radius:9999px;background:var(--primary);
+    box-shadow:0 0 8px var(--primary);
+    transition:width .25s linear, background .25s;
+    width:100%;
+  }
+  .timer-bar-fill.warn{background:var(--gold);box-shadow:0 0 8px var(--gold);}
+  .timer-bar-fill.danger{background:var(--accent);box-shadow:0 0 8px var(--accent);}
+  .timer-label{
+    display:flex;justify-content:space-between;margin-top:6px;
+    font-size:11px;letter-spacing:0.08em;color:var(--on-surface-variant);text-transform:uppercase;
+  }
+  .timer-label .value{color:var(--primary-bright);font-weight:700;font-family:'Space Grotesk',sans-serif;}
+
+  .goal-list{margin-top:16px;padding-top:16px;border-top:1px solid var(--outline-variant);display:flex;flex-direction:column;gap:8px;}
+  .goal-item{
+    display:flex;align-items:center;gap:8px;font-size:12px;color:var(--on-surface-variant);
+  }
+  .goal-item .material-symbols-outlined{font-size:18px;color:var(--outline);}
+  .goal-item.done{color:var(--primary-bright);}
+  .goal-item.done .material-symbols-outlined{color:var(--primary-bright);}
+  .goal-item .gv{margin-left:auto;font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--on-surface);}
+
+  .meta-row{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-top:16px;padding-top:16px;border-top:1px solid var(--outline-variant);
+    font-size:11px;letter-spacing:0.08em;color:var(--on-surface-variant);
+    text-transform:uppercase;
+  }
+  .meta-row span.value{color:var(--primary-bright);font-weight:700;}
+
+  .controls-panel{flex-grow:1;}
+  .controls-title{
+    font-size:12px;letter-spacing:0.1em;font-weight:700;text-transform:uppercase;
+    color:var(--on-surface-variant);margin-bottom:16px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .controls-title .material-symbols-outlined{font-size:16px;}
+  .key-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+    max-width:120px;margin:0 auto 24px;
+  }
+  .key{
+    width:32px;height:32px;border-radius:4px;
+    border:1px solid var(--outline);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--primary-bright);background:var(--surface-container);
+    font-size:13px;font-weight:600;
+    transition:all .1s;
+  }
+  .key.pressed{
+    background:var(--primary);color:var(--primary-deep);
+    box-shadow:0 0 10px var(--primary);
+  }
+  .controls-desc{
+    font-size:11px;color:var(--on-surface-variant);
+    text-align:center;opacity:0.6;line-height:1.6;
+  }
+  .pause-hint{
+    margin-top:12px;text-align:center;font-size:11px;color:var(--on-surface-variant);opacity:0.7;
+  }
+  .pause-hint kbd{
+    background:var(--surface-container);border:1px solid var(--outline);
+    border-radius:4px;padding:1px 6px;color:var(--primary-bright);font-family:'Inter',sans-serif;
+  }
+
+  .status-bar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px 16px;border-radius:8px;
+    background:var(--surface-low);
+    border:1px solid var(--outline-variant);
+  }
+  .status-left{display:flex;align-items:center;gap:8px;}
+  .status-dot{
+    width:8px;height:8px;border-radius:9999px;background:var(--primary);
+    animation:pulseDot 2s ease-in-out infinite;
+  }
+  .status-dot.paused{background:var(--accent);animation:none;}
+  @keyframes pulseDot{
+    0%,100%{opacity:1;}
+    50%{opacity:0.4;}
+  }
+  .status-text{font-size:10px;letter-spacing:0.1em;font-weight:700;color:var(--on-surface);}
+  .status-fps{font-size:10px;letter-spacing:0.1em;font-weight:700;color:var(--primary-bright);}
+
+  /* Mobile dock */
+  .mobile-nav{
+    display:none;
+    position:fixed;bottom:0;left:0;right:0;height:64px;
+    background:var(--surface-low);
+    align-items:center;justify-content:space-around;
+    border-top:1px solid var(--outline-variant);
+    z-index:50;
+  }
+  @media (max-width:767px){
+    .mobile-nav{display:flex;}
+    nav.sidebar{display:none;}
+    .layout{height:calc(100vh - 64px - 64px);}
+  }
+  .mobile-nav .material-symbols-outlined{color:var(--on-surface-variant);background:none;border:none;cursor:pointer;}
+  .mobile-nav .material-symbols-outlined.active{color:var(--primary-bright);}
+  .play-fab{
+    width:48px;height:48px;border-radius:9999px;background:var(--primary);
+    display:flex;align-items:center;justify-content:center;
+    transform:translateY(-16px);
+    box-shadow:0 4px 14px rgba(42,229,0,0.4);
+    border:none;cursor:pointer;
+  }
+  .play-fab .material-symbols-outlined{color:var(--primary-deep);font-weight:700;}
+
+  /* Mobile touch controls */
+  .touch-controls{
+    display:none;
+    grid-template-columns:repeat(3,56px);
+    grid-template-rows:repeat(3,56px);
+    gap:6px;justify-content:center;margin-top:16px;
+  }
+  @media (max-width:767px){
+    .touch-controls{display:grid;}
+  }
+  .touch-btn{
+    border:1px solid var(--outline);
+    border-radius:8px;background:var(--surface-container);
+    color:var(--primary-bright);
+    display:flex;align-items:center;justify-content:center;
+    font-size:24px;user-select:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .touch-btn:active{background:var(--primary);color:var(--primary-deep);}
+  .touch-btn.pause-btn{font-size:14px;letter-spacing:0.05em;font-weight:700;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">NEON SNAKE</div>
+    <div class="header-icons">
+      <span class="material-symbols-outlined" id="sound-toggle" title="Âm thanh">volume_up</span>
+      <span class="material-symbols-outlined" title="Trợ giúp" id="help-btn">help</span>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar">
+    <div class="profile">
+      <div class="profile-inner">
+        <div class="avatar font-display">CR</div>
+        <div>
+          <div class="profile-name">Cyber_Runner</div>
+          <div class="profile-rank">Hạng: Elite</div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-list" id="mode-nav">
+      <button class="nav-item active" data-mode="classic">
+        <span class="material-symbols-outlined">videogame_asset</span>
+        <span>Chế độ cổ điển</span>
+      </button>
+      <button class="nav-item" data-mode="timed">
+        <span class="material-symbols-outlined">timer</span>
+        <span>Đấu tính giờ</span>
+        <span class="mode-badge">60s</span>
+      </button>
+      <button class="nav-item" data-mode="challenge">
+        <span class="material-symbols-outlined">military_tech</span>
+        <span>Thử thách</span>
+      </button>
+      <button class="nav-item" id="leaderboard-toggle">
+        <span class="material-symbols-outlined">leaderboard</span>
+        <span>Xếp hạng</span>
+      </button>
+    </div>
+
+    <div class="leaderboard-panel" id="leaderboard-panel">
+      <div class="leaderboard-title">
+        <span class="material-symbols-outlined">military_tech</span>
+        TOP 5 ĐIỂM CAO
+      </div>
+      <div class="leaderboard-tabs" id="leaderboard-tabs">
+        <button class="lb-tab active" data-mode="classic">Cổ điển</button>
+        <button class="lb-tab" data-mode="timed">Tính giờ</button>
+        <button class="lb-tab" data-mode="challenge">Thử thách</button>
+      </div>
+      <ul class="leaderboard-list" id="leaderboard-list"></ul>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="nav-item quit-item" style="color:var(--accent);">
+        <span class="material-symbols-outlined">power_settings_new</span>
+        <span>Thoát</span>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="bg-glow"></div>
+    <div class="board-area">
+      <div class="board-frame">
+        <div id="game-canvas">
+
+          <!-- Start / setup overlay -->
+          <div class="overlay" id="overlay-start">
+            <h2 id="start-title">NEON SNAKE</h2>
+            <p id="start-desc">Dùng W A S D hoặc các phím mũi tên để điều khiển. Ăn mồi để tăng điểm và độ dài. Nhấn Space để tạm dừng.</p>
+
+            <div class="setup-group" id="difficulty-group">
+              <div class="setup-label">Độ khó</div>
+              <div class="option-row" id="difficulty-row">
+                <button class="option-btn" data-difficulty="easy">Dễ</button>
+                <button class="option-btn selected" data-difficulty="medium">Trung bình</button>
+                <button class="option-btn" data-difficulty="hard">Khó</button>
+              </div>
+            </div>
+
+            <div class="setup-group" id="wrap-group">
+              <div class="toggle-row">
+                <div class="toggle" id="wrap-toggle"><div class="toggle-knob"></div></div>
+                <div class="setup-label" style="margin:0;">Xuyên tường</div>
+              </div>
+            </div>
+
+            <div class="setup-group hidden" id="timed-group">
+              <div class="setup-label">Thời gian</div>
+              <div class="option-row" id="time-row">
+                <button class="option-btn" data-time="30">30s</button>
+                <button class="option-btn selected" data-time="60">60s</button>
+                <button class="option-btn" data-time="120">120s</button>
+              </div>
+            </div>
+
+            <div class="setup-group hidden" id="challenge-group">
+              <div class="setup-label">Cấp độ thử thách</div>
+              <div class="option-row" id="level-row">
+                <button class="option-btn selected" data-level="1">Cấp 1</button>
+                <button class="option-btn" data-level="2">Cấp 2</button>
+                <button class="option-btn" data-level="3">Cấp 3</button>
+              </div>
+            </div>
+
+            <button class="primary-btn" id="start-btn">Bắt đầu</button>
+          </div>
+
+          <!-- Pause overlay -->
+          <div class="overlay hidden" id="overlay-pause">
+            <h2>TẠM DỪNG</h2>
+            <p>Nhấn Space hoặc nút bên dưới để tiếp tục cuộc chơi.</p>
+            <button class="primary-btn" id="resume-btn">Tiếp tục</button>
+          </div>
+
+          <!-- Game over overlay -->
+          <div class="overlay hidden" id="overlay-over">
+            <h2 id="over-title">GAME OVER</h2>
+            <p id="over-text">Điểm của bạn: 0</p>
+            <div class="mini-leaderboard">
+              <ol id="over-leaderboard"></ol>
+            </div>
+            <button class="primary-btn" id="restart-btn">Chơi lại</button>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="panels">
+        <div class="glass-panel" id="score-panel">
+          <div class="score-row">
+            <div class="score-col">
+              <div class="panel-label">Điểm hiện tại</div>
+              <div class="score-value" id="current-score">0000</div>
+            </div>
+            <div class="score-col" style="text-align:right;">
+              <div class="panel-label">Điểm cao nhất</div>
+              <div class="score-value small" id="high-score">0000</div>
+            </div>
+          </div>
+
+          <!-- Timed mode timer -->
+          <div class="timer-wrap hidden" id="timer-wrap">
+            <div class="timer-bar-bg"><div class="timer-bar-fill" id="timer-bar-fill"></div></div>
+            <div class="timer-label">
+              <span>Thời gian còn lại</span>
+              <span class="value" id="timer-value">60s</span>
+            </div>
+          </div>
+
+          <!-- Challenge mode goals -->
+          <div class="goal-list hidden" id="goal-list"></div>
+
+          <div class="meta-row">
+            <span id="meta-label-1">Độ khó</span>
+            <span class="value" id="meta-value-1">TB</span>
+          </div>
+          <div class="meta-row" id="meta-row-2">
+            <span>Xuyên tường</span>
+            <span class="value" id="meta-wrap">TẮT</span>
+          </div>
+        </div>
+
+        <div class="glass-panel controls-panel">
+          <div class="controls-title">
+            <span class="material-symbols-outlined">sports_esports</span>
+            ĐIỀU KHIỂN
+          </div>
+          <div class="key-grid">
+            <div></div>
+            <div class="key" data-key="w">W</div>
+            <div></div>
+            <div class="key" data-key="a">A</div>
+            <div class="key" data-key="s">S</div>
+            <div class="key" data-key="d">D</div>
+          </div>
+          <div class="controls-desc" id="controls-desc">
+            HOẶC DÙNG PHÍM MŨI TÊN ĐỂ DI CHUYỂN TRONG MA TRẬN. ĂN MỒI ĐỂ TĂNG ĐIỂM.
+          </div>
+          <div class="pause-hint">Nhấn <kbd>Space</kbd> để tạm dừng / tiếp tục</div>
+          <div class="touch-controls">
+            <div></div>
+            <div class="touch-btn" data-dir="up">▲</div>
+            <div></div>
+            <div class="touch-btn" data-dir="left">◀</div>
+            <div class="touch-btn pause-btn" id="touch-pause">II</div>
+            <div class="touch-btn" data-dir="right">▶</div>
+            <div></div>
+            <div class="touch-btn" data-dir="down">▼</div>
+            <div></div>
+          </div>
+        </div>
+
+        <div class="status-bar">
+          <div class="status-left">
+            <span class="status-dot" id="status-dot"></span>
+            <span class="status-text" id="status-text">SẴN SÀNG</span>
+          </div>
+          <div class="status-fps">60 FPS</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="mobile-nav">
+  <span class="material-symbols-outlined active" data-mode="classic" data-mobile-mode="1">videogame_asset</span>
+  <span class="material-symbols-outlined" data-mode="timed" data-mobile-mode="1">timer</span>
+  <button class="play-fab" id="fab-play">
+    <span class="material-symbols-outlined" id="fab-icon">play_arrow</span>
+  </button>
+  <span class="material-symbols-outlined" data-mode="challenge" data-mobile-mode="1">military_tech</span>
+  <span class="material-symbols-outlined" id="mobile-leaderboard">leaderboard</span>
+</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('game-canvas');
+  const overlayStart = document.getElementById('overlay-start');
+  const overlayPause = document.getElementById('overlay-pause');
+  const overlayOver = document.getElementById('overlay-over');
+  const overTitle = document.getElementById('over-title');
+  const overText = document.getElementById('over-text');
+  const overLeaderboard = document.getElementById('over-leaderboard');
+  const startBtn = document.getElementById('start-btn');
+  const resumeBtn = document.getElementById('resume-btn');
+  const restartBtn = document.getElementById('restart-btn');
+  const currentScoreEl = document.getElementById('current-score');
+  const highScoreEl = document.getElementById('high-score');
+  const statusText = document.getElementById('status-text');
+  const statusDot = document.getElementById('status-dot');
+  const soundToggle = document.getElementById('sound-toggle');
+  const difficultyRow = document.getElementById('difficulty-row');
+  const wrapToggle = document.getElementById('wrap-toggle');
+  const wrapGroup = document.getElementById('wrap-group');
+  const difficultyGroup = document.getElementById('difficulty-group');
+  const timedGroup = document.getElementById('timed-group');
+  const challengeGroup = document.getElementById('challenge-group');
+  const timeRow = document.getElementById('time-row');
+  const levelRow = document.getElementById('level-row');
+  const metaLabel1 = document.getElementById('meta-label-1');
+  const metaValue1 = document.getElementById('meta-value-1');
+  const metaRow2 = document.getElementById('meta-row-2');
+  const metaWrap = document.getElementById('meta-wrap');
+  const leaderboardToggle = document.getElementById('leaderboard-toggle');
+  const leaderboardPanel = document.getElementById('leaderboard-panel');
+  const leaderboardList = document.getElementById('leaderboard-list');
+  const leaderboardTabs = document.getElementById('leaderboard-tabs');
+  const mobileLeaderboard = document.getElementById('mobile-leaderboard');
+  const touchPause = document.getElementById('touch-pause');
+  const fabPlay = document.getElementById('fab-play');
+  const fabIcon = document.getElementById('fab-icon');
+  const startTitle = document.getElementById('start-title');
+  const startDesc = document.getElementById('start-desc');
+  const modeNav = document.getElementById('mode-nav');
+  const timerWrap = document.getElementById('timer-wrap');
+  const timerBarFill = document.getElementById('timer-bar-fill');
+  const timerValue = document.getElementById('timer-value');
+  const goalList = document.getElementById('goal-list');
+  const controlsDesc = document.getElementById('controls-desc');
+
+  const GRID_SIZE = 25;
+  let cellPx = 0;
+
+  let snake, direction, nextDirection, food, score, highScore, gameInterval, speed, state;
+  let timeLeft = 0, timeTotal = 0, timerInterval = null;
+  let goals = [], obstacles = [];
+  // state: 'idle' | 'running' | 'paused' | 'over'
+
+  const SOUND_KEY = 'neon_snake_sound';
+  const DIFF_KEY = 'neon_snake_difficulty';
+  const WRAP_KEY = 'neon_snake_wrap';
+  const TIME_KEY = 'neon_snake_time';
+  const LEVEL_KEY = 'neon_snake_level';
+  const MODE_KEY = 'neon_snake_mode';
+
+  const DIFFICULTIES = {
+    easy:   { start: 160, min: 100, step: 2, label: 'DỄ' },
+    medium: { start: 130, min: 60,  step: 2, label: 'TB' },
+    hard:   { start: 95,  min: 45,  step: 3, label: 'KHÓ' }
+  };
+
+  const CHALLENGE_LEVELS = {
+    1: { speed: 120, obstacles: 6,  goalLength: 14, goalScore: 80,  label: 'CẤP 1' },
+    2: { speed: 100, obstacles: 12, goalLength: 18, goalScore: 140, label: 'CẤP 2' },
+    3: { speed: 85,  obstacles: 20, goalLength: 24, goalScore: 220, label: 'CẤP 3' }
+  };
+
+  const MODE_LABELS = { classic: 'Cổ điển', timed: 'Tính giờ', challenge: 'Thử thách' };
+
+  let mode = ls('get', MODE_KEY) || 'classic';
+  let difficulty = ls('get', DIFF_KEY) || 'medium';
+  let wrapMode = ls('get', WRAP_KEY) === '1';
+  let soundOn = ls('get', SOUND_KEY) !== '0';
+  let timeSetting = parseInt(ls('get', TIME_KEY)) || 60;
+  let levelSetting = parseInt(ls('get', LEVEL_KEY)) || 1;
+
+  function getHsKey(m){ return 'neon_snake_high_score_' + m; }
+  function getLbKey(m){ return 'neon_snake_leaderboard_' + m; }
+
+  highScore = parseInt(ls('get', getHsKey(mode))) || 0;
+  highScoreEl.textContent = formatScore(highScore);
+
+  function ls(action, key, val){
+    try {
+      if(action === 'get') return localStorage.getItem(key);
+      if(action === 'set') return localStorage.setItem(key, val);
+    } catch(e){ return null; }
+  }
+
+  function formatScore(n){
+    return n.toString().padStart(4,'0');
+  }
+
+  /* ---------- Sound (Web Audio, no assets) ---------- */
+  let audioCtx = null;
+  function getAudioCtx(){
+    if(!audioCtx){
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ return null; }
+    }
+    return audioCtx;
+  }
+  function beep(freq, duration, type, vol){
+    if(!soundOn) return;
+    const ctx = getAudioCtx();
+    if(!ctx) return;
+    if(ctx.state === 'suspended') ctx.resume();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type || 'square';
+    osc.frequency.value = freq;
+    gain.gain.value = (vol !== undefined ? vol : 0.08);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+    osc.stop(ctx.currentTime + duration);
+  }
+  function sfxEat(){ beep(880, 0.09, 'square', 0.07); setTimeout(()=>beep(1180,0.08,'square',0.06), 60); }
+  function sfxBonus(){ beep(1040, 0.08, 'square', 0.07); setTimeout(()=>beep(1320,0.07,'square',0.06), 60); setTimeout(()=>beep(1660,0.09,'square',0.06), 120); }
+  function sfxOver(){ beep(220, 0.18, 'sawtooth', 0.08); setTimeout(()=>beep(140,0.28,'sawtooth',0.08), 140); }
+  function sfxStart(){ beep(440, 0.07, 'square', 0.06); setTimeout(()=>beep(660,0.09,'square',0.06), 80); }
+  function sfxPause(){ beep(520, 0.06, 'triangle', 0.05); }
+  function sfxGoal(){ beep(660, 0.07, 'triangle', 0.06); setTimeout(()=>beep(990,0.1,'triangle',0.06), 70); }
+  function sfxTick(){ beep(330, 0.05, 'square', 0.04); }
+
+  function updateSoundIcon(){
+    soundToggle.textContent = soundOn ? 'volume_up' : 'volume_off';
+    soundToggle.classList.toggle('muted', !soundOn);
+  }
+  updateSoundIcon();
+  soundToggle.addEventListener('click', () => {
+    soundOn = !soundOn;
+    ls('set', SOUND_KEY, soundOn ? '1' : '0');
+    updateSoundIcon();
+    if(soundOn) beep(660, 0.06, 'square', 0.06);
+  });
+
+  /* ---------- Mode switching ---------- */
+  function applyModeUI(){
+    modeNav.querySelectorAll('.nav-item[data-mode]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+    document.querySelectorAll('.mobile-nav [data-mode]').forEach(el => {
+      el.classList.toggle('active', el.dataset.mode === mode);
+    });
+
+    highScore = parseInt(ls('get', getHsKey(mode))) || 0;
+    highScoreEl.textContent = formatScore(highScore);
+
+    difficultyGroup.classList.toggle('hidden', mode === 'challenge');
+    wrapGroup.classList.toggle('hidden', mode === 'challenge');
+    timedGroup.classList.toggle('hidden', mode !== 'timed');
+    challengeGroup.classList.toggle('hidden', mode !== 'challenge');
+
+    timerWrap.classList.toggle('hidden', mode !== 'timed');
+    goalList.classList.toggle('hidden', mode !== 'challenge');
+
+    if(mode === 'classic'){
+      startTitle.textContent = 'NEON SNAKE';
+      startDesc.textContent = 'Dùng W A S D hoặc các phím mũi tên để điều khiển. Ăn mồi để tăng điểm và độ dài. Nhấn Space để tạm dừng.';
+      metaLabel1.textContent = 'Độ khó';
+      metaValue1.textContent = DIFFICULTIES[difficulty].label;
+      metaRow2.classList.remove('hidden');
+      controlsDesc.textContent = 'HOẶC DÙNG PHÍM MŨI TÊN ĐỂ DI CHUYỂN TRONG MA TRẬN. ĂN MỒI ĐỂ TĂNG ĐIỂM.';
+    } else if(mode === 'timed'){
+      startTitle.textContent = 'ĐẤU TÍNH GIỜ';
+      startDesc.textContent = 'Ăn càng nhiều mồi càng tốt trước khi hết giờ. Mồi vàng (bonus) xuất hiện ngẫu nhiên và cho điểm gấp đôi.';
+      metaLabel1.textContent = 'Độ khó';
+      metaValue1.textContent = DIFFICULTIES[difficulty].label;
+      metaRow2.classList.remove('hidden');
+      controlsDesc.textContent = 'CHẠY ĐUA VỚI THỜI GIAN. MỒI VÀNG CHO ĐIỂM GẤP ĐÔI, XUẤT HIỆN TRONG THỜI GIAN NGẮN.';
+    } else {
+      startTitle.textContent = 'THỬ THÁCH';
+      startDesc.textContent = 'Né vật cản và hoàn thành mục tiêu của cấp độ: đạt độ dài và điểm số yêu cầu để chiến thắng.';
+      const cfg = CHALLENGE_LEVELS[levelSetting];
+      metaLabel1.textContent = 'Cấp độ';
+      metaValue1.textContent = cfg.label;
+      metaRow2.classList.add('hidden');
+      controlsDesc.textContent = 'NÉ VẬT CẢN MÀU ĐỎ. HOÀN THÀNH MỤC TIÊU ĐỂ CHIẾN THẮNG THỬ THÁCH.';
+    }
+
+    renderLeaderboard();
+    if(leaderboardTabs){
+      leaderboardTabs.querySelectorAll('.lb-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.mode === mode);
+      });
+    }
+  }
+
+  modeNav.querySelectorAll('.nav-item[data-mode]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      mode = btn.dataset.mode;
+      ls('set', MODE_KEY, mode);
+      applyModeUI();
+      resetToIdle();
+    });
+  });
+  document.querySelectorAll('.mobile-nav [data-mode]').forEach(el => {
+    el.addEventListener('click', () => {
+      mode = el.dataset.mode;
+      ls('set', MODE_KEY, mode);
+      applyModeUI();
+      resetToIdle();
+    });
+  });
+
+  function resetToIdle(){
+    clearInterval(gameInterval);
+    clearInterval(timerInterval);
+    state = 'idle';
+    setStatus('SẴN SÀNG');
+    overlayPause.classList.add('hidden');
+    overlayOver.classList.add('hidden');
+    overlayStart.classList.remove('hidden');
+    updateFab();
+    canvas.querySelectorAll('.segment, .food, .obstacle').forEach(el => el.remove());
+  }
+
+  /* ---------- Difficulty, wrap, time, level setup UI ---------- */
+  function applyDifficultyUI(){
+    difficultyRow.querySelectorAll('.option-btn').forEach(btn => {
+      btn.classList.toggle('selected', btn.dataset.difficulty === difficulty);
+    });
+    if(mode !== 'challenge') metaValue1.textContent = DIFFICULTIES[difficulty].label;
+  }
+  difficultyRow.addEventListener('click', (e) => {
+    const btn = e.target.closest('.option-btn');
+    if(!btn) return;
+    difficulty = btn.dataset.difficulty;
+    ls('set', DIFF_KEY, difficulty);
+    applyDifficultyUI();
+  });
+  applyDifficultyUI();
+
+  function applyWrapUI(){
+    wrapToggle.classList.toggle('on', wrapMode);
+    metaWrap.textContent = wrapMode ? 'BẬT' : 'TẮT';
+  }
+  wrapToggle.addEventListener('click', () => {
+    wrapMode = !wrapMode;
+    ls('set', WRAP_KEY, wrapMode ? '1' : '0');
+    applyWrapUI();
+  });
+  applyWrapUI();
+
+  function applyTimeUI(){
+    timeRow.querySelectorAll('.option-btn').forEach(btn => {
+      btn.classList.toggle('selected', parseInt(btn.dataset.time) === timeSetting);
+    });
+  }
+  timeRow.addEventListener('click', (e) => {
+    const btn = e.target.closest('.option-btn');
+    if(!btn) return;
+    timeSetting = parseInt(btn.dataset.time);
+    ls('set', TIME_KEY, timeSetting);
+    applyTimeUI();
+  });
+  applyTimeUI();
+
+  function applyLevelUI(){
+    levelRow.querySelectorAll('.option-btn').forEach(btn => {
+      btn.classList.toggle('selected', parseInt(btn.dataset.level) === levelSetting);
+    });
+    if(mode === 'challenge') metaValue1.textContent = CHALLENGE_LEVELS[levelSetting].label;
+  }
+  levelRow.addEventListener('click', (e) => {
+    const btn = e.target.closest('.option-btn');
+    if(!btn) return;
+    levelSetting = parseInt(btn.dataset.level);
+    ls('set', LEVEL_KEY, levelSetting);
+    applyLevelUI();
+  });
+  applyLevelUI();
+
+  /* ---------- Leaderboard ---------- */
+  function getLeaderboard(m){
+    try {
+      const raw = ls('get', getLbKey(m || mode));
+      return raw ? JSON.parse(raw) : [];
+    } catch(e){ return []; }
+  }
+  function saveLeaderboard(list, m){
+    ls('set', getLbKey(m || mode), JSON.stringify(list));
+  }
+  function addToLeaderboard(newScore){
+    let list = getLeaderboard();
+    let tag;
+    if(mode === 'classic' || mode === 'timed'){
+      tag = DIFFICULTIES[difficulty].label;
+    } else {
+      tag = CHALLENGE_LEVELS[levelSetting].label;
+    }
+    list.push({ score: newScore, tag: tag, date: new Date().toLocaleDateString('vi-VN') });
+    list.sort((a,b) => b.score - a.score);
+    list = list.slice(0,5);
+    saveLeaderboard(list);
+    return list;
+  }
+  function renderLeaderboard(){
+    const list = getLeaderboard();
+    leaderboardList.innerHTML = '';
+    if(list.length === 0){
+      const empty = document.createElement('div');
+      empty.className = 'leaderboard-empty';
+      empty.textContent = 'Chưa có điểm nào';
+      leaderboardList.appendChild(empty);
+      return;
+    }
+    list.forEach((entry, idx) => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="rank">#${idx+1}</span><span>${entry.tag}</span><span class="lb-score">${formatScore(entry.score)}</span>`;
+      leaderboardList.appendChild(li);
+    });
+  }
+  function renderOverLeaderboard(list, highlightScore){
+    overLeaderboard.innerHTML = '';
+    if(list.length === 0) return;
+    list.forEach((entry, idx) => {
+      const li = document.createElement('li');
+      if(entry.score === highlightScore) li.classList.add('you');
+      li.innerHTML = `<span>#${idx+1} · ${entry.tag}</span><span class="lb-score">${formatScore(entry.score)}</span>`;
+      overLeaderboard.appendChild(li);
+    });
+  }
+  renderLeaderboard();
+
+  let leaderboardVisible = false;
+  function toggleLeaderboardPanel(){
+    leaderboardVisible = !leaderboardVisible;
+    leaderboardPanel.classList.toggle('visible', leaderboardVisible);
+    leaderboardToggle.classList.toggle('active', leaderboardVisible);
+    if(leaderboardVisible) renderLeaderboard();
+  }
+  leaderboardToggle.addEventListener('click', toggleLeaderboardPanel);
+  mobileLeaderboard.addEventListener('click', toggleLeaderboardPanel);
+  leaderboardTabs.addEventListener('click', (e) => {
+    const tab = e.target.closest('.lb-tab');
+    if(!tab) return;
+    leaderboardTabs.querySelectorAll('.lb-tab').forEach(t => t.classList.toggle('active', t === tab));
+    const list = getLeaderboard(tab.dataset.mode);
+    leaderboardList.innerHTML = '';
+    if(list.length === 0){
+      const empty = document.createElement('div');
+      empty.className = 'leaderboard-empty';
+      empty.textContent = 'Chưa có điểm nào';
+      leaderboardList.appendChild(empty);
+      return;
+    }
+    list.forEach((entry, idx) => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="rank">#${idx+1}</span><span>${entry.tag}</span><span class="lb-score">${formatScore(entry.score)}</span>`;
+      leaderboardList.appendChild(li);
+    });
+  });
+
+  /* ---------- Game logic ---------- */
+  function updateCellPx(){
+    cellPx = canvas.clientWidth / GRID_SIZE;
+  }
+
+  function setStatus(text, paused){
+    statusText.textContent = text;
+    statusDot.classList.toggle('paused', !!paused);
+  }
+
+  function buildObstacles(count){
+    const list = [];
+    let attempts = 0;
+    while(list.length < count && attempts < count * 30){
+      attempts++;
+      const x = Math.floor(Math.random()*GRID_SIZE);
+      const y = Math.floor(Math.random()*GRID_SIZE);
+      // keep clear zone around starting snake position
+      if(x >= 7 && x <= 15 && y >= 10 && y <= 14) continue;
+      if(list.some(o => o.x === x && o.y === y)) continue;
+      list.push({x,y});
+    }
+    return list;
+  }
+
+  function buildGoals(cfg){
+    return [
+      { id:'length', label:'Đạt độ dài rắn', target: cfg.goalLength, getValue: () => snake.length, done:false, icon:'open_in_full' },
+      { id:'score', label:'Đạt điểm số', target: cfg.goalScore, getValue: () => score, done:false, icon:'flag' }
+    ];
+  }
+
+  function renderGoals(){
+    goalList.innerHTML = '';
+    goals.forEach(g => {
+      const val = g.getValue();
+      if(val >= g.target) g.done = true;
+      const div = document.createElement('div');
+      div.className = 'goal-item' + (g.done ? ' done' : '');
+      div.innerHTML = `<span class="material-symbols-outlined">${g.done ? 'check_circle' : g.icon}</span><span>${g.label}</span><span class="gv">${Math.min(val,g.target)}/${g.target}</span>`;
+      goalList.appendChild(div);
+    });
+  }
+
+  function initGame(){
+    updateCellPx();
+    snake = [
+      {x:12, y:12},
+      {x:11, y:12},
+      {x:10, y:12}
+    ];
+    direction = 'right';
+    nextDirection = 'right';
+    score = 0;
+    currentScoreEl.textContent = formatScore(score);
+    obstacles = [];
+    goals = [];
+
+    if(mode === 'classic'){
+      speed = DIFFICULTIES[difficulty].start;
+    } else if(mode === 'timed'){
+      speed = DIFFICULTIES[difficulty].start;
+      timeTotal = timeSetting;
+      timeLeft = timeSetting;
+      updateTimerUI();
+    } else {
+      const cfg = CHALLENGE_LEVELS[levelSetting];
+      speed = cfg.speed;
+      wrapMode = false;
+      obstacles = buildObstacles(cfg.obstacles);
+      goals = buildGoals(cfg);
+    }
+
+    placeFood();
+    render();
+    renderGoals();
+  }
+
+  function updateTimerUI(){
+    const pct = Math.max(0, (timeLeft / timeTotal) * 100);
+    timerBarFill.style.width = pct + '%';
+    timerBarFill.classList.remove('warn','danger');
+    if(pct <= 20) timerBarFill.classList.add('danger');
+    else if(pct <= 50) timerBarFill.classList.add('warn');
+    timerValue.textContent = Math.max(0, Math.ceil(timeLeft)) + 's';
+  }
+
+  function placeFood(){
+    let valid = false;
+    let attempts = 0;
+    let isBonus = (mode === 'timed' && Math.random() < 0.18);
+    while(!valid && attempts < 500){
+      attempts++;
+      const fx = Math.floor(Math.random()*GRID_SIZE);
+      const fy = Math.floor(Math.random()*GRID_SIZE);
+      valid = !snake.some(s => s.x === fx && s.y === fy) &&
+              !obstacles.some(o => o.x === fx && o.y === fy);
+      if(valid){
+        food = {x: fx, y: fy, bonus: isBonus};
+      }
+    }
+  }
+
+  function render(){
+    canvas.querySelectorAll('.segment, .food, .obstacle').forEach(el => el.remove());
+
+    obstacles.forEach(o => {
+      const div = document.createElement('div');
+      div.className = 'obstacle';
+      div.style.width = cellPx + 'px';
+      div.style.height = cellPx + 'px';
+      div.style.left = (o.x * cellPx) + 'px';
+      div.style.top = (o.y * cellPx) + 'px';
+      canvas.appendChild(div);
+    });
+
+    snake.forEach((seg, idx) => {
+      const div = document.createElement('div');
+      div.className = 'segment' + (idx === 0 ? ' head' : '');
+      div.style.width = cellPx + 'px';
+      div.style.height = cellPx + 'px';
+      div.style.left = (seg.x * cellPx) + 'px';
+      div.style.top = (seg.y * cellPx) + 'px';
+      div.style.opacity = idx === 0 ? '1' : Math.max(0.55, 1 - idx*0.04);
+      canvas.appendChild(div);
+    });
+
+    const foodDiv = document.createElement('div');
+    foodDiv.className = 'food' + (food.bonus ? ' bonus' : '');
+    const foodSize = cellPx * 0.8;
+    foodDiv.style.width = foodSize + 'px';
+    foodDiv.style.height = foodSize + 'px';
+    foodDiv.style.left = (food.x * cellPx + (cellPx-foodSize)/2) + 'px';
+    foodDiv.style.top = (food.y * cellPx + (cellPx-foodSize)/2) + 'px';
+    canvas.appendChild(foodDiv);
+  }
+
+  function step(){
+    direction = nextDirection;
+    const head = {...snake[0]};
+
+    switch(direction){
+      case 'up': head.y -= 1; break;
+      case 'down': head.y += 1; break;
+      case 'left': head.x -= 1; break;
+      case 'right': head.x += 1; break;
+    }
+
+    if(wrapMode){
+      if(head.x < 0) head.x = GRID_SIZE - 1;
+      if(head.x >= GRID_SIZE) head.x = 0;
+      if(head.y < 0) head.y = GRID_SIZE - 1;
+      if(head.y >= GRID_SIZE) head.y = 0;
+    } else {
+      if(head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE){
+        return gameOver(false);
+      }
+    }
+
+    if(snake.some(s => s.x === head.x && s.y === head.y)){
+      return gameOver(false);
+    }
+
+    if(obstacles.some(o => o.x === head.x && o.y === head.y)){
+      return gameOver(false);
+    }
+
+    snake.unshift(head);
+
+    if(head.x === food.x && head.y === food.y){
+      if(food.bonus){
+        score += 20;
+        sfxBonus();
+      } else {
+        score += 10;
+        sfxEat();
+      }
+      currentScoreEl.textContent = formatScore(score);
+      placeFood();
+
+      if(mode !== 'timed'){
+        const cfg = mode === 'classic' ? DIFFICULTIES[difficulty] : null;
+        if(cfg && speed > cfg.min){
+          speed -= cfg.step;
+          restartInterval();
+        }
+      }
+
+      if(mode === 'challenge'){
+        renderGoals();
+        if(goals.every(g => g.done)){
+          return gameOver(true);
+        }
+      }
+    } else {
+      snake.pop();
+    }
+
+    render();
+  }
+
+  function restartInterval(){
+    clearInterval(gameInterval);
+    gameInterval = setInterval(step, speed);
+  }
+
+  function startTimerCountdown(){
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      timeLeft -= 0.1;
+      if(timeLeft <= 0){
+        timeLeft = 0;
+        updateTimerUI();
+        return gameOver(false);
+      }
+      if(Math.ceil(timeLeft) <= 5 && Math.abs(timeLeft - Math.round(timeLeft)) < 0.05){
+        sfxTick();
+      }
+      updateTimerUI();
+    }, 100);
+  }
+
+  function gameOver(won){
+    state = 'over';
+    clearInterval(gameInterval);
+    clearInterval(timerInterval);
+    setStatus('ĐÃ DỪNG');
+
+    let isNewHigh = false;
+    if(score > highScore){
+      highScore = score;
+      highScoreEl.textContent = formatScore(highScore);
+      ls('set', getHsKey(mode), highScore);
+      isNewHigh = true;
+    }
+    const list = addToLeaderboard(score);
+    renderLeaderboard();
+    renderOverLeaderboard(list, score);
+
+    if(mode === 'challenge' && won){
+      sfxGoal();
+      overTitle.textContent = isNewHigh ? 'HOÀN THÀNH! KỶ LỤC MỚI!' : 'HOÀN THÀNH THỬ THÁCH!';
+      overText.textContent = `Bạn đã đạt mục tiêu! Điểm: ${score} · ${CHALLENGE_LEVELS[levelSetting].label}`;
+    } else if(mode === 'timed'){
+      sfxOver();
+      overTitle.textContent = isNewHigh ? 'HẾT GIỜ! KỶ LỤC MỚI!' : 'HẾT GIỜ!';
+      overText.textContent = `Điểm của bạn: ${score} · Độ khó: ${DIFFICULTIES[difficulty].label}`;
+    } else {
+      sfxOver();
+      overTitle.textContent = isNewHigh ? 'KỶ LỤC MỚI!' : 'GAME OVER';
+      let extra = mode === 'classic' ? ` · Độ khó: ${DIFFICULTIES[difficulty].label}${wrapMode ? ' · Xuyên tường' : ''}` : ` · ${CHALLENGE_LEVELS[levelSetting].label}`;
+      overText.textContent = `Điểm của bạn: ${score}${extra}`;
+    }
+
+    overlayPause.classList.add('hidden');
+    overlayStart.classList.add('hidden');
+    overlayOver.classList.remove('hidden');
+    updateFab();
+  }
+
+  function startGame(){
+    initGame();
+    overlayStart.classList.add('hidden');
+    overlayOver.classList.add('hidden');
+    overlayPause.classList.add('hidden');
+    state = 'running';
+    setStatus('ĐANG CHẠY');
+    sfxStart();
+    restartInterval();
+    if(mode === 'timed') startTimerCountdown();
+    updateFab();
+  }
+
+  function togglePause(){
+    if(state === 'running'){
+      state = 'paused';
+      clearInterval(gameInterval);
+      clearInterval(timerInterval);
+      setStatus('TẠM DỪNG', true);
+      overlayPause.classList.remove('hidden');
+      sfxPause();
+    } else if(state === 'paused'){
+      state = 'running';
+      setStatus('ĐANG CHẠY');
+      overlayPause.classList.add('hidden');
+      restartInterval();
+      if(mode === 'timed') startTimerCountdown();
+      sfxPause();
+    }
+    updateFab();
+  }
+
+  function updateFab(){
+    if(state === 'running'){
+      fabIcon.textContent = 'pause';
+    } else {
+      fabIcon.textContent = 'play_arrow';
+    }
+  }
+
+  state = 'idle';
+  startBtn.addEventListener('click', startGame);
+  restartBtn.addEventListener('click', startGame);
+  resumeBtn.addEventListener('click', togglePause);
+
+  fabPlay.addEventListener('click', () => {
+    if(state === 'idle' || state === 'over') startGame();
+    else togglePause();
+  });
+
+  touchPause.addEventListener('click', () => {
+    if(state === 'running' || state === 'paused') togglePause();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    const key = e.key.toLowerCase();
+
+    if(key === ' ' || key === 'spacebar'){
+      e.preventDefault();
+      if(state === 'running' || state === 'paused') togglePause();
+      else if(state === 'idle' || state === 'over') startGame();
+      return;
+    }
+
+    let dir = null;
+    switch(key){
+      case 'w': case 'arrowup': dir = 'up'; break;
+      case 's': case 'arrowdown': dir = 'down'; break;
+      case 'a': case 'arrowleft': dir = 'left'; break;
+      case 'd': case 'arrowright': dir = 'right'; break;
+    }
+    if(!dir) return;
+    e.preventDefault();
+
+    if(state !== 'running') return;
+
+    const opposite = {up:'down', down:'up', left:'right', right:'left'};
+    if(opposite[dir] === direction) return;
+
+    nextDirection = dir;
+
+    const keyMap = {up:'w', down:'s', left:'a', right:'d'};
+    const el = document.querySelector(`.key[data-key="${keyMap[dir]}"]`);
+    if(el){
+      el.classList.add('pressed');
+      setTimeout(()=>el.classList.remove('pressed'), 120);
+    }
+  });
+
+  document.querySelectorAll('.touch-btn[data-dir]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(state !== 'running') return;
+      const dir = btn.dataset.dir;
+      const opposite = {up:'down', down:'up', left:'right', right:'left'};
+      if(opposite[dir] === direction) return;
+      nextDirection = dir;
+      const keyMap = {up:'w', down:'s', left:'a', right:'d'};
+      const el = document.querySelector(`.key[data-key="${keyMap[dir]}"]`);
+      if(el){
+        el.classList.add('pressed');
+        setTimeout(()=>el.classList.remove('pressed'), 120);
+      }
+    });
+  });
+
+  document.querySelectorAll('.glass-panel').forEach(panel => {
+    panel.addEventListener('mousemove', e => {
+      const rect = panel.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      panel.style.background = `radial-gradient(circle 100px at ${x}px ${y}px, rgba(42, 229, 0, 0.08), transparent), rgba(21, 32, 49, 0.7)`;
+    });
+    panel.addEventListener('mouseleave', () => {
+      panel.style.background = `rgba(21, 32, 49, 0.7)`;
+    });
+  });
+
+  window.addEventListener('resize', () => {
+    updateCellPx();
+    if(snake) render();
+  });
+
+  applyModeUI();
+  updateCellPx();
+  snake = [{x:12,y:12},{x:11,y:12},{x:10,y:12},{x:9,y:12}];
+  food = {x:17,y:15,bonus:false};
+  render();
+})();
+</script>
+
+</body>
+</html>
